@@ -3,7 +3,9 @@
 {-# LANGUAGE TemplateHaskell    #-}
 {-# LANGUAGE RankNTypes         #-}
 {-# LANGUAGE FlexibleContexts   #-}
-module Plots.Axis.Ticks where
+module Plots.Axis.Ticks
+    ( ticks
+    ) where
 
 import Control.Lens  hiding (transform, ( # ))
 import Data.Default
@@ -11,7 +13,10 @@ import Data.Foldable as F
 import Data.List     ((\\))
 import Data.Ord
 import Data.Data
+import Data.Maybe
+
 import Plots.Utils
+import Plots.Types
 
 import Diagrams.Prelude
 
@@ -90,6 +95,28 @@ instance (TypeableFloat n, Enum n) => Default (Ticks v n) where
     , _minorTickStyle  = mempty # lwO 0.4
     , _majorTickStyle  = mempty # lwO 0.6
     }
+----------------------------------------------------
+--Simple tick function for ease
+----------------------------------------------------
+
+data TickOpts = TickOpts
+    { _tickLength :: Double
+    }
+
+instance Default TickOpts where
+    def = TickOpts 
+        { _tickLength = 0.1
+        }
+
+makeLenses ''TickOpts
+
+ticks :: (PlotData m1 a1, PlotData m2 a2) => m1 a1 -> m2 a2 -> TickOpts -> PlotFn
+ticks xs ys opt mapX mapY = [ticksX, ticksY]
+  where
+    ticksX = mconcat [ fromVertices [x ^& 0, x ^& (opt^.tickLength)] | x <- mapMaybe (runMap mapX) xs' ]
+    ticksY = mconcat [ fromVertices [0 ^& y, (opt^.tickLength) ^& y] | y <- mapMaybe (runMap mapY) ys' ]
+    xs' = getValues xs
+    ys' = getValues ys
 
 instance Typeable n => HasStyle (Ticks v n) where
   applyStyle s = over tickStyles (applyStyle s)
@@ -190,3 +217,4 @@ majorTicksHelper ts0 n (a,b) = hs where
 
 log10 :: Floating a => a -> a
 log10 = logBase 10
+
