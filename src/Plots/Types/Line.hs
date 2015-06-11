@@ -10,7 +10,11 @@
 {-# OPTIONS_GHC -fno-warn-orphans       #-}
 -- Orphans: Plotable (Path V2 n)
 
-module Plots.Types.Line where
+module Plots.Types.Line     
+    ( line
+    , LineOpts
+    , lineshape
+    ) where
 
 import Control.Lens     hiding (transform, ( # ), lmap)
 import Data.Foldable    as F
@@ -23,6 +27,20 @@ import Diagrams.Coordinates.Isomorphic
 
 import Plots.Themes
 import Plots.Types
+import Plots.Utils (hasNaN)
+
+data LineOpts = LineOpts
+    { _lineshape :: Char
+    }
+
+makeLenses ''LineOpts
+
+instance Default LineOpts where
+    def = LineOpts
+        { _lineshape = 'o'
+        }
+
+-- figureout a way to add strokesize, alpha and size; add scales
 
 mkTrail :: (PointLike v n p, OrderedField n, Foldable f) => f p -> Located (Trail v n)
 mkTrail = mkTrailOf folded
@@ -45,6 +63,14 @@ instance (TypeableFloat n, Renderable (Path V2 n) b) => Plotable (Path V2 n) b w
   defLegendPic _ pp
     = (p2 (-10,0) ~~ p2 (10,0))
         # applyLineStyle pp
+
+line :: (PlotData m1 a1, PlotData m2 a2) => m1 a1 -> m2 a2 -> LineOpts -> PlotFn
+line xs ys opt mapX mapY | hasNaN xy = error "Line: Found NaN"
+                            | otherwise = [l]
+  where
+    l = lwO 1 . fromVertices . map p2 . mapMaybe (runMap pMap) $ xy
+    xy = zip (getValues xs) $ getValues ys
+    pMap = compose mapX mapY
 
 ------------------------------------------------------------------------
 -- Sample
