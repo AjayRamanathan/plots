@@ -31,6 +31,10 @@ module Plots.Types.Scatter
   , scatterTransform
   , scatterStyle
   , connectingLine
+  
+  , points
+  , PointOpts
+  , shape
   ) where
 
 import           Control.Lens                    hiding (lmap, transform, ( # ))
@@ -38,6 +42,7 @@ import           Data.Foldable                   (Foldable)
 import           Data.Typeable
 import           Diagrams.Coordinates.Isomorphic
 import           Diagrams.Prelude                hiding (view)
+import           Data.Maybe
 
 import           Plots.Themes
 import           Plots.Types
@@ -177,3 +182,43 @@ instance HasScatter (GScatterPlot v n d) v n d where
 
 instance HasScatter (PropertiedPlot (GScatterPlot v n d) b) v n d where
   scatter = _pp
+
+data PointOpts = PointOpts
+    { _shape :: Char
+    }
+
+makeLenses ''PointOpts
+
+instance Default PointOpts where
+    def = PointOpts
+        { _shape = 'o'
+        }
+
+points :: (PlotData m1 a1, PlotData m2 a2) => m1 a1 -> m2 a2 -> PointOpts -> PlotFn
+points xs ys opt mapX mapY = map (uncurry moveTo) ps
+  where
+    ps = flip zip (repeat s).map p2.mapMaybe (runMap pMap) $ xy
+    xy = zip (getValues xs) $ getValues ys
+    s = lwO 1 $ stroke.getShape $ opt^.shape
+    pMap = compose mapX mapY
+
+-- need to add shapes into .scales
+
+getShape :: Char -> Path R2
+{-# INLINE getShape #-}
+getShape s | s == 'o' = circle 0.07
+           | s == '^' = eqTriangle 0.1
+           | s == '#' = square 0.1
+           | s == '+' = plus 0.07
+           | s == '*' = star (StarSkip 2) (pentagon 0.1)
+           | s == 'x' = cross 0.07
+           | otherwise = circle 0.07
+
+cross :: Double -> Path R2
+{-# INLINE cross #-}
+cross x = fromVertices [ x^&(-x) , (-x)^&x ]
+          <> fromVertices [ x^&x , (-x)^&(-x) ]
+
+plus :: Double -> Path R2
+{-# INLINE plus #-}
+plus x = cross x # rotate (45 @@ deg)
