@@ -8,7 +8,12 @@
 {-# LANGUAGE UndecidableInstances  #-}
 {-# LANGUAGE RecordWildCards  #-}
 
-module Plots.Types.Heatmap where
+module Plots.Types.Heatmap
+    ( heatmap
+    , HeatmapOpt
+    , palette
+    , range
+    ) where
   -- ( HeatMap
   -- , simpleHeatMap
   --   -- * Prism
@@ -27,13 +32,17 @@ import           Data.Typeable
 import           Data.Foldable                   as F
 import qualified Data.Vector.Generic             as GV
 import qualified Data.Vector.Generic.Mutable     as GMV
-import qualified Data.Vector.Unboxed as U
-import           Data.Vector.Unboxed ((!))
+import           Data.Colour.Palette.BrewerSet (brewerSet, ColorCat(..))
+import           Data.Default (Default, def)
+import           Data.Maybe (fromJust, fromMaybe, mapMaybe)
+import qualified Data.Vector as V
+
 import           Diagrams.Coordinates.Isomorphic
 import           Diagrams.Prelude
 
+import           Plots.Utils
 import           Plots.Themes
-import Plots.Types
+import           Plots.Types
 
 data HeatMap n = HeatMap
   { hmFunction :: Int -> Int -> Double
@@ -48,6 +57,63 @@ data HeatMap n = HeatMap
 
 type instance V (HeatMap n) = V2
 type instance N (HeatMap n) = n
+
+data HeatmapOpt = HeatmapOpt
+    { _palette :: ![Colour Double]
+    , _range :: !(Maybe (Double, Double))
+    }
+
+instance Default HeatmapOpt where
+    def = HeatmapOpt
+        { _palette = reverse $ brewerSet RdYlBu 11
+        , _range = Nothing
+        }
+
+makeLenses ''HeatmapOpt
+
+heatmap :: [[Double]] -> HeatmapOpt -> PlotFn
+heatmap mat opt mapX mapY = map (\((x,y), z) -> rect' z # moveTo (x ^& y)) hm
+  where
+    hm = mapMaybe (\(i,v) -> runMap pMap i >>= \x -> return (x,v))
+       . zip [ (x,y) | y <- [nRow, nRow-1 .. 1], x <- [1 .. nCol] ]
+       . map (fromJust . runMap (linearMapBound r (0,1)))
+       $ mat'
+    r = fromMaybe (minimum mat', maximum mat') $ _range opt
+    mat' = concat mat
+    gapX = (fromJust.runMap mapX) 2 - (fromJust.runMap mapX) 1
+    gapY = (fromJust.runMap mapY) 2 - (fromJust.runMap mapY) 1
+    rect' z = let col = colorMapSmooth z palette'
+              in rect gapX gapY # lc col # fc col
+    palette' = V.fromList $ opt^.palette
+    pMap = compose mapX mapY
+    nRow = fromIntegral . length $ mat
+    nCol = fromIntegral . length . head $ mat
+
+{-
+colorKey :: Double -> Double -> (Double, Double) -> [Colour Double] -> DiaR2
+colorKey w h r cs = vcat (map rect' [1,0.995..0])
+  where
+    rect' z = rect w (h/200) # lc (colorMap z cs) # fc (colorMap z cs)
+    -}
+
+colorMap :: Double -- a value from 0 to 1
+         -> V.Vector (Colour Double) -> Colour Double
+colorMap x colors | x == 1 = V.last colors
+                  | otherwise = colors V.! (truncate $ x * n)
+  where
+    n = fromIntegral . V.length $ colors
+{-# INLINE colorMap #-}
+
+-- | map numbers to colors
+colorMapSmooth :: Double -- a value from 0 to 1
+               -> V.Vector (Colour Double) -> Colour Double
+colorMapSmooth x colors = blend p (colors V.! i) $ colors V.! (i+1)
+  where
+    p = fromIntegral i - x * (fromIntegral n - 1) + 1
+    i | x == 1 = n - 2
+      | otherwise = truncate $ x * (fromIntegral n - 1)
+    n = V.length colors
+{-# INLINE colorMapSmooth #-}
 
 instance OrderedField n => Enveloped (HeatMap n) where
   getEnvelope HeatMap {..} = getEnvelope $
