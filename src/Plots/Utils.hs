@@ -175,6 +175,44 @@ linearMapBound (l, u) (l', u') = PointMap mapFn (l, u)
 hasNaN :: [(Double, Double)] -> Bool
 hasNaN = any (uncurry ((||) `on` isNaN))
 
+-- slants for fonts.
+data FontSlant = FontSlantNormal  -- ^ normal.
+               | FontSlantItalic  -- ^ italic.
+               | FontSlantOblique -- ^ oblique.
+               deriving (Show, Eq, Ord)
+
+-- default.
+instance Default FontSlant where
+  def = FontSlantNormal
+
+-- bold normal.
+data FontBN = FontBNNormal -- normal
+           | FontBNBold   -- bold
+           deriving (Show, Eq, Ord)
+
+-- def
+instance Default S where
+  def = FontBNNormal
+
+-- font data type
+data FontStyle = FontStyle {
+      _font_name   :: String, -- font to use
+      _font_size   :: Double, -- size
+      _font_slant  :: FontSlant,
+      _font_bn     :: FontBN,
+      _font_color  :: AlphaColour Double -- color
+} deriving (Show, Eq)
+
+-- def
+instance Default FontStyle where
+  def = FontStyle 
+    { _font_name   = "sans-serif"
+    , _font_size   = 10
+    , _font_slant  = def
+    , _font_bn = def
+    , _font_color  = opaque black
+    }
+
 --text' :: Double -> String -> DiaR2
 --text' size str = stroke (textSVG' (TextOpts str lin2 INSIDE_WH HADV False size size)) # fc black # lwL 0
 
