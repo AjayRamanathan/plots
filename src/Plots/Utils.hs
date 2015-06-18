@@ -12,6 +12,14 @@ module Plots.Utils
     , linearMapBound
     , hasNaN
     , text'
+ 
+ -- text
+
+    , drawTextA
+    , drawTextR
+    , drawTextsR
+    , textDrawRect
+    , textDimension
     ) where
 
 
