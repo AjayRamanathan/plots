@@ -226,6 +226,89 @@ data VerticalTA =  VTA_Top
                  | VTA_BaseLine 
                  deriving (Show, Eq, Ord)
 
+-- | Draw a line of text that is aligned at a different anchor point.
+--   See 'drawText'.
+drawTextA :: HorizontalTA -> VerticalTA -> Point -> String -> DiaR2
+drawTextA hta vta = drawTextR hta vta 0
+
+{- 
+drawTextA hta vta p txt =
+  drawTextR hta vta 0 p txt 
+  >> withLineStyle (solidLine 1 (opaque red)) 
+     (textDrawRect hta vta p txt
+       >>= \rect -> alignStrokePath (rectPath rect) >>= strokePath)
+-}
+
+drawTextR :: HorizontalTA -> VerticalTA -> Double -> Point -> String -> DiaR2
+drawTextR hta vta angle p s =
+  withTranslation p $
+    withRotation theta $ do
+      ts <- textSize s
+      drawText (adjustText hta vta ts) s
+  where
+    theta = angle*pi/180.0
+
+drawTextsR :: HorizontalTA -> VerticalTA -> Double -> Point -> String -> DiaR2
+drawTextsR hta vta angle p s = case num of
+      0 -> return ()
+      1 -> drawTextR hta vta angle p s
+      _ -> 
+        withTranslation p $
+          withRotation theta $ do
+            tss <- mapM textSize ss
+            let ts = head tss
+            let maxh   = maximum (map textSizeYBearing tss)
+                gap    = maxh / 2
+                totalHeight = fromIntegral num*maxh +
+                              (fromIntegral num-1)*gap
+                ys = take num (unfoldr (\y-> Just (y, y-gap-maxh))
+                                       (yinit vta ts totalHeight))
+                xs = map (adjustTextX hta) tss
+            sequence_ (zipWith3 drawT xs ys ss)
+    where
+      ss   = lines s
+      num  = length ss
+
+      drawT x y = drawText (Point x y)
+      theta = angle*pi/180.0
+
+      yinit VTA_Top      ts _      = textSizeAscent ts
+      yinit VTA_BaseLine _  _      = 0
+      yinit VTA_Centre   ts height = height / 2 + textSizeAscent ts
+      yinit VTA_Bottom   ts height = height + textSizeAscent ts
+
+adjustText :: HorizontalTA -> VerticalTA -> TextSize -> Point
+adjustText hta vta ts = Point (adjustTextX hta ts) (adjustTextY vta ts)
+
+adjustTextX :: HorizontalTAr -> TextSize -> Double
+adjustTextX HTA_Left   _  = 0
+adjustTextX HTA_Centre ts = - (textSizeWidth ts / 2)
+adjustTextX HTA_Right  ts = - textSizeWidth ts
+
+adjustTextY :: VerticalTA -> TextSize -> Double
+adjustTextY VTA_Top      ts = textSizeAscent ts
+adjustTextY VTA_Centre   ts = - textSizeYBearing ts / 2
+adjustTextY VTA_BaseLine _  = 0
+adjustTextY VTA_Bottom   ts = - textSizeDescent ts
+
+{-
+textDrawRect :: HorizontalTA -> VerticalTA -> Point -> String -> DiaR2
+textDrawRect hta vta (Point x y) s = do
+  ts <- textSize s
+  let (w,h,dh) = (textSizeWidth ts, textSizeHeight ts, textSizeDescent ts)
+      lx = adjustTextX hta ts
+      ly = adjustTextY vta ts
+      (x',y') = (x + lx, y + ly + dh)
+      p1 = Point x' (y' - h)
+      p2 = Point (x' + w) y'
+  return $ Rect p1 p2
+
+textDimension :: String -> (Double, Double)
+textDimension s = do
+  ts <- textSize s
+  return (textSizeWidth ts, textSizeHeight ts)
+-}
+
 -- linecap
 data LineCap = LineCapButt   -- straight.
              | LineCapRound  -- rounded
