@@ -213,6 +213,30 @@ instance Default FontStyle where
     , _font_color  = opaque black
     }
 
+-- horizontal text anchor HTA-VTA
+data HorizontalTA = HTA_Left 
+                  | HTA_Centre 
+                  | HTA_Right 
+                  deriving (Show, Eq, Ord)
+
+-- vertical
+data VerticalTA =  VTA_Top 
+                 | VTA_Centre 
+                 | VTA_Bottom 
+                 | VTA_BaseLine 
+                 deriving (Show, Eq, Ord)
+
+-- text -----------------------------------------------------------------
+--data TextSize = TextSize 
+--  { textSizeWidth    :: Double -- width
+--  , textSizeAscent   :: Double -- ascent
+-- , textSizeDescent  :: Double -- decent
+--  , textSizeYBearing :: Double -- y
+--  , textSizeHeight   :: Double -- h
+--  } deriving (Show, Eq)
+
+-- -----------------------------------------------------------------------
+
 --text' :: Double -> String -> DiaR2
 --text' size str = stroke (textSVG' (TextOpts str lin2 INSIDE_WH HADV False size size)) # fc black # lwL 0
 
