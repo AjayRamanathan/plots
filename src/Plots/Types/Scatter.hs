@@ -203,7 +203,7 @@ points xs ys opt mapX mapY = map (uncurry moveTo) ps
     pMap = compose mapX mapY
 
 -- need to add shapes into .scales
-
+{-
 getShape :: Char -> Path R2
 {-# INLINE getShape #-}
 getShape s | s == 'o' = circle 0.07
@@ -222,3 +222,4 @@ cross x = fromVertices [ x^&(-x) , (-x)^&x ]
 plus :: Double -> Path R2
 {-# INLINE plus #-}
 plus x = cross x # rotate (45 @@ deg)
+-}
