@@ -226,6 +226,29 @@ data VerticalTA =  VTA_Top
                  | VTA_BaseLine 
                  deriving (Show, Eq, Ord)
 
+-- linecap
+data LineCap = LineCapButt   -- straight.
+             | LineCapRound  -- rounded
+             | LineCapSquare -- square.
+             deriving (Show, Eq, Ord)
+
+-- linestyle
+data LineStyle = LineStyle 
+  { _line_width  :: Double  -- size
+  , _line_color  :: AlphaColour Double -- colour
+  , _line_dashes :: [Double]-- dash
+  , _line_cap    :: LineCap -- line
+  } deriving (Show, Eq)
+
+-- def
+instance Default LineStyle where
+  def = LineStyle 
+    { _line_width  = 1
+    , _line_color  = opaque black
+    , _line_dashes = []
+    , _line_cap    = LineCapButt
+    }
+
 -- text -----------------------------------------------------------------
 --data TextSize = TextSize 
 --  { textSizeWidth    :: Double -- width
