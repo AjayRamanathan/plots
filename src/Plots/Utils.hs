@@ -11,10 +11,6 @@ module Plots.Utils
     , linearMap
     , linearMapBound
     , hasNaN
-
- -- line 
-   , solidLine
-   , dashedLine
  
 -- text
     , drawTextA
@@ -317,42 +313,6 @@ textDimension s = do
   ts <- textSize s
   return (textSizeWidth ts, textSizeHeight ts)
 -}
-
--- linecap
-data LineCap = LineCapButt   -- straight.
-             | LineCapRound  -- rounded
-             | LineCapSquare -- square.
-             deriving (Show, Eq, Ord)
-
--- linestyle
-data LineStyle = LineStyle 
-  { _line_width  :: Double  -- size
-  , _line_color  :: AlphaColour Double -- colour
-  , _line_dashes :: [Double]-- dash
-  , _line_cap    :: LineCap -- line
-  } deriving (Show, Eq)
-
--- def
-instance Default LineStyle where
-  def = LineStyle 
-    { _line_width  = 1
-    , _line_color  = opaque black
-    , _line_dashes = []
-    , _line_cap    = LineCapButt
-    }
-
--- solidlines
-solidLine :: Double             -- size
-          -> AlphaColour Double -- size
-          -> LineStyle
-solidLine w cl = LineStyle w cl [] LineCapButt 
-
--- dashed lines
-dashedLine :: Double   -- size
-           -> [Double] -- dash
-           -> AlphaColour Double -- colour
-           -> LineStyle
-dashedLine w ds cl = LineStyle w cl ds LineCapButt 
 
 defaultColorSeq :: [AlphaColour Double]
 defaultColorSeq = cycle $ map opaque [blue, red, green, yellow, cyan, magenta]

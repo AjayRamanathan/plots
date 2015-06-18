@@ -14,6 +14,10 @@ module Plots.Types.Line
     ( line
     , LineOpts
     , lineshape
+
+ -- line 
+   , solidLine
+   , dashedLine
     ) where
 
 import Control.Lens     hiding (transform, ( # ), lmap)
@@ -29,18 +33,43 @@ import Plots.Themes
 import Plots.Types
 import Plots.Utils (hasNaN)
 
-data LineOpts = LineOpts
-    { _lineshape :: Char
+-- linecap
+data LineCap = LineCapButt   -- straight.
+             | LineCapRound  -- rounded
+             | LineCapSquare -- square.
+             deriving (Show, Eq, Ord)
+
+-- linestyle
+data LineOpts= LineOpts
+  { _line_width  :: Double  -- size
+  , _line_color  :: AlphaColour Double -- colour
+  , _line_dashes :: [Double]-- dash
+  , _line_cap    :: LineCap -- line
+  } deriving (Show, Eq)
+
+-- def
+instance Default LineOptswhere
+  def = LineOpts
+    { _line_width  = 1
+    , _line_color  = opaque black
+    , _line_dashes = []
+    , _line_cap    = LineCapButt
     }
 
-makeLenses ''LineOpts
+-- solidlines
+solidLine :: Double             -- size
+          -> AlphaColour Double -- size
+          -> LineStyle
+solidLine w cl = LineOptsw cl [] LineCapButt 
 
-instance Default LineOpts where
-    def = LineOpts
-        { _lineshape = 'o'
-        }
+-- dashed lines
+dashedLine :: Double   -- size
+           -> [Double] -- dash
+           -> AlphaColour Double -- colour
+           -> LineStyle
+dashedLine w ds cl = LineOptsw cl ds LineCapButt 
 
--- figureout a way to add strokesize, alpha and size; add scales
+-- figureout a way to add strokesize ((a+b)/2 -> makes it look bad, trapezium isnt working out)
 
 mkTrail :: (PointLike v n p, OrderedField n, Foldable f) => f p -> Located (Trail v n)
 mkTrail = mkTrailOf folded
@@ -58,11 +87,11 @@ instance (TypeableFloat n, Renderable (Path V2 n) b) => Plotable (Path V2 n) b w
   renderPlotable s path pp
     = stroke path
         # transform (s^.specTrans)
-        # applyLineStyle pp
+        # applyLineOptspp
 
   defLegendPic _ pp
     = (p2 (-10,0) ~~ p2 (10,0))
-        # applyLineStyle pp
+        # applyLineOptspp
 
 line :: (PlotData m1 a1, PlotData m2 a2) => m1 a1 -> m2 a2 -> LineOpts -> PlotFn
 line xs ys opt mapX mapY | hasNaN xy = error "Line: Found NaN"
@@ -79,4 +108,4 @@ line xs ys opt mapX mapY | hasNaN xy = error "Line: Found NaN"
 -- kernalDensity :: Int -> Fold s n -> s -> LinePlot V2 n
 -- kernalDensity n f as =
 
-
+makeLenses ''LineOpts
