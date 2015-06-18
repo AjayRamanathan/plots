@@ -11,15 +11,16 @@ module Plots.Utils
     , linearMap
     , linearMapBound
     , hasNaN
-    , text'
- 
- -- text
 
+ -- line 
+   , solidLine
+   , dashedLine
+ 
+-- text
     , drawTextA
     , drawTextR
     , drawTextsR
-    , textDrawRect
-    , textDimension
+    , text'
     ) where
 
 
@@ -339,6 +340,22 @@ instance Default LineStyle where
     , _line_dashes = []
     , _line_cap    = LineCapButt
     }
+
+-- solidlines
+solidLine :: Double             -- size
+          -> AlphaColour Double -- size
+          -> LineStyle
+solidLine w cl = LineStyle w cl [] LineCapButt 
+
+-- dashed lines
+dashedLine :: Double   -- size
+           -> [Double] -- dash
+           -> AlphaColour Double -- colour
+           -> LineStyle
+dashedLine w ds cl = LineStyle w cl ds LineCapButt 
+
+defaultColorSeq :: [AlphaColour Double]
+defaultColorSeq = cycle $ map opaque [blue, red, green, yellow, cyan, magenta]
 
 -- text -----------------------------------------------------------------
 --data TextSize = TextSize 
